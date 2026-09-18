@@ -1,0 +1,11 @@
+# Local: one backend serving the embedded frontend on http://localhost:8080.
+# Run from the repo root:  docker compose -f infrastructure/docker/docker-compose.yml up --build
+services:
+  backend:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"

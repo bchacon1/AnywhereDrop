@@ -1,0 +1,13 @@
+.DS_Store
+node_modules/
+frontend/dist/
+backend/web/dist/*
+!backend/web/dist/.gitkeep
+test-results/
+playwright-report/
+*.log
+backend/bin/
+
+# Keep Markdown documentation local.
+*.[mM][dD]
+*.[mM][aA][rR][kK][dD][oO][wW][nN]
