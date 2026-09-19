@@ -17,6 +17,7 @@ import (
 	busmem "anywheredrop/backend/internal/bus/memory"
 	roomsmem "anywheredrop/backend/internal/rooms/memory"
 	"anywheredrop/backend/internal/signaling"
+	"anywheredrop/backend/internal/turn"
 	"anywheredrop/backend/internal/web"
 	static "anywheredrop/backend/web"
 )
@@ -45,8 +46,22 @@ func main() {
 	go store.Janitor(ctx, 30*time.Second)
 	go sig.RunJanitors(ctx, time.Minute)
 
+	// Phase 6: ICE server config. STUN always; TURN only when TURN_URLS and
+	// TURN_SECRET are set (coturn use-auth-secret). Credentials live TURN_TTL.
+	turnCfg := turn.Config{
+		StunURLs: turn.ParseURLs(envOr("STUN_URLS", "stun:stun.l.google.com:19302")),
+		TurnURLs: turn.ParseURLs(envOr("TURN_URLS", "")),
+		Secret:   envOr("TURN_SECRET", ""),
+		TTL:      10 * time.Minute,
+		Label:    "anywheredrop",
+	}
+	if ttl, err := time.ParseDuration(envOr("TURN_TTL", "")); err == nil && ttl > 0 {
+		turnCfg.TTL = ttl
+	}
+
 	mux := http.NewServeMux()
 	mux.Handle("GET /health", web.HealthHandler(web.HealthInfo{Status: "ok", Rooms: "memory", Bus: "memory"}))
+	mux.Handle("GET /api/ice-config", turn.Handler(turnCfg))
 	mux.Handle("GET /ws", sig)
 	mux.Handle("/", static.Handler())
 
